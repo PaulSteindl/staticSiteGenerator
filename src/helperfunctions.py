@@ -1,5 +1,9 @@
+import re
 from textnode import TextType, TextNode
 from leafnode import LeafNode
+
+REGEX_MARKDOWN_IMAGES = r"!\[([^\[\]]*)\]\(([^\(\)]*)\)"
+REGEX_MARKDOWN_LINKS = r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)"
 
 def text_node_to_html_node(text_node):
     match(text_node.text_type):
@@ -43,4 +47,42 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
                 continue
 
             new_nodes.append(TextNode(split_text[i], text_type))
+    return new_nodes
+
+def extract_markdown_images(text):
+    return re.findall(r"\!\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
+
+def extract_markdown_links(text):
+    return re.findall(r"(?<!\!)\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
+
+def split_nodes_image(old_nodes):
+    new_nodes = []
+    for old_node in old_nodes:
+        images = extract_markdown_images(old_node.text)
+        text_without_images = re.split(r"\!\[[^\[\]]*\]\([^\(\)]*\)", old_node.text)
+
+        for i in range(0, len(text_without_images)):
+            if text_without_images[i] != '':
+                new_nodes.append(TextNode(text_without_images[i], old_node.text_type))
+
+            if i < len(images):
+                altText, url = images[i]
+                new_nodes.append(TextNode(altText, TextType.IMAGE, url))
+
+    return new_nodes
+
+def split_nodes_link(old_nodes):
+    new_nodes = []
+    for old_node in old_nodes:
+        links = extract_markdown_links(old_node.text)
+        text_without_links = re.split(r"(?<!\!)\[[^\[\]]*]\([^\(\)]*\)", old_node.text)
+
+        for i in range(0, len(text_without_links)):
+            if text_without_links[i] != '':
+                new_nodes.append(TextNode(text_without_links[i], old_node.text_type))
+
+            if i < len(links):
+                altText, url = links[i]
+                new_nodes.append(TextNode(altText, TextType.LINK, url))
+
     return new_nodes
