@@ -43,7 +43,7 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
                 continue
 
             if i % 2 == 0:
-                new_nodes.append(TextNode(split_text[i], old_node.text_type))
+                new_nodes.append(TextNode(split_text[i], old_node.text_type, old_node.url))
                 continue
 
             new_nodes.append(TextNode(split_text[i], text_type))
@@ -63,7 +63,7 @@ def split_nodes_image(old_nodes):
 
         for i in range(0, len(text_without_images)):
             if text_without_images[i] != '':
-                new_nodes.append(TextNode(text_without_images[i], old_node.text_type))
+                new_nodes.append(TextNode(text_without_images[i], old_node.text_type, old_node.url))
 
             if i < len(images):
                 altText, url = images[i]
@@ -79,10 +79,18 @@ def split_nodes_link(old_nodes):
 
         for i in range(0, len(text_without_links)):
             if text_without_links[i] != '':
-                new_nodes.append(TextNode(text_without_links[i], old_node.text_type))
+                new_nodes.append(TextNode(text_without_links[i], old_node.text_type, old_node.url))
 
             if i < len(links):
                 altText, url = links[i]
                 new_nodes.append(TextNode(altText, TextType.LINK, url))
 
     return new_nodes
+
+def text_to_textnodes(text):
+    new_text_node = TextNode(text, TextType.NORMAL)
+    tmp_text_nodes = split_nodes_image([new_text_node])
+    tmp_text_nodes = split_nodes_link(tmp_text_nodes)
+    tmp_text_nodes = split_nodes_delimiter(tmp_text_nodes, "**", TextType.BOLD)
+    tmp_text_nodes = split_nodes_delimiter(tmp_text_nodes, "_", TextType.ITALIC)
+    return split_nodes_delimiter(tmp_text_nodes, "`", TextType.CODE)
