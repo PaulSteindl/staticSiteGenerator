@@ -94,3 +94,13 @@ def text_to_textnodes(text):
     tmp_text_nodes = split_nodes_delimiter(tmp_text_nodes, "**", TextType.BOLD)
     tmp_text_nodes = split_nodes_delimiter(tmp_text_nodes, "_", TextType.ITALIC)
     return split_nodes_delimiter(tmp_text_nodes, "`", TextType.CODE)
+
+"""
+Takes a raw Markdown string (representing a full document) as input and returns a list of "block" strings. 
+Spliting Text by \n\n
+Striping lines of trailing or leading whitespaces
+Filter for non empty Lines
+Convert and return List
+"""
+def markdown_to_blocks(markdown):
+    return list(filter(lambda s: s != "", map(lambda s: s.strip(), markdown.split("\n\n"))))

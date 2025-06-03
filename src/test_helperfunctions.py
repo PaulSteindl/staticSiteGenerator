@@ -397,7 +397,62 @@ class TestHelperfunctions(unittest.TestCase):
             new_nodes
         )
 
+    def test_normal_text_to_textnodes(self):
+        new_nodes = text_to_textnodes("A normal text with nothing unusual")
+        self.assertListEqual(
+            [
+                TextNode("A normal text with nothing unusual", TextType.NORMAL)
+            ],
+            new_nodes
+        )
 
+    """markdown_to_blocks function test"""
+    def test_markdown_to_blocks(self):
+        md = """
+This is **bolded** paragraph
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items"
+            ],
+        )
+
+    def test_markdown_to_blocks_diffrent_text(self):
+        md = """
+
+
+
+This is **bolded** paragraph
+With Alot of bs
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+
+
+- And this is another list
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph\nWith Alot of bs",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list",
+                "- And this is another list"
+            ],
+        )
 
 
 if __name__ == "__main__":
