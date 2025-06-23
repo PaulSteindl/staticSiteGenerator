@@ -31,7 +31,7 @@ def text_node_to_html_node(text_node):
         case TextType.IMAGE:
             if not text_node.url:
                 raise ValueError(f"TextType {TextType.IMAGE} needs an url")
-            return LeafNode("img", None, {"src" : text_node.url, "alt" : text_node.text})
+            return LeafNode("img", "", {"src" : text_node.url, "alt" : text_node.text})
         
         case _:
             raise Exception(f"Unknow TextType {text_node.text_type}")
@@ -185,3 +185,10 @@ def markdown_to_html_node(markdown):
                 children.append(handle_paragraph(markdown_block))        
 
     return ParentNode("div", children)
+
+def extract_title(markdown):
+    title = re.search(r"^\s*#(?!#)\s*(.+?)\s*$", markdown, re.MULTILINE)
+    if not title:
+        raise Exception("No h1 found in document")
+    return title.group(1)
+        

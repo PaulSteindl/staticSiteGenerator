@@ -58,7 +58,7 @@ class TestHelperfunctions(unittest.TestCase):
         node = TextNode("This is a text node", TextType.IMAGE, "https://github.com/PaulSteindl")
         html_node = text_node_to_html_node(node)
         self.assertEqual(html_node.tag, "img")
-        self.assertEqual(html_node.value, None)
+        self.assertEqual(html_node.value, "")
         self.assertEqual(html_node.props, {"src" : "https://github.com/PaulSteindl", "alt" : "This is a text node"})
 
     def test_no_url_image_type(self):
@@ -74,6 +74,32 @@ class TestHelperfunctions(unittest.TestCase):
     def test_invalid_image_type(self):
         with self.assertRaises(AttributeError):
             TextNode("This is a text node", TextType.INVALIDBS, None)
+
+    def test_image_type_value_is_empty_string(self):
+        node = TextNode("Alt text", TextType.IMAGE, "https://example.com/image.png")
+        html_node = text_node_to_html_node(node)
+        self.assertEqual(html_node.tag, "img")
+        self.assertEqual(html_node.value, "")
+        self.assertEqual(html_node.props, {"src": "https://example.com/image.png", "alt": "Alt text"})
+
+    def test_image_type_to_html_outputs_img_tag(self):
+        node = TextNode("Alt text", TextType.IMAGE, "https://example.com/image.png")
+        html_node = text_node_to_html_node(node)
+        html = html_node.to_html()
+        # Accept both <img ...> and <img .../>
+        self.assertTrue(
+            html.startswith('<img') and 'src="https://example.com/image.png"' in html and 'alt="Alt text"' in html
+        )
+
+    def test_image_type_missing_url_raises(self):
+        node = TextNode("Alt text", TextType.IMAGE, "")
+        with self.assertRaises(ValueError):
+            text_node_to_html_node(node)
+
+    def test_image_type_none_url_raises(self):
+        node = TextNode("Alt text", TextType.IMAGE, None)
+        with self.assertRaises(ValueError):
+            text_node_to_html_node(node)
 
     """-----------------------------------"""
     """split_nodes_delimiter function test"""
@@ -483,9 +509,9 @@ This is the same paragraph on a new line
             ]
         )
 
-    """---------------------"""
-    """markdown_to_html_node"""
-    """---------------------"""
+    """-----------------------------------"""
+    """markdown_to_html_node function test"""
+    """-----------------------------------"""
 
     def test_paragraphs(self):
         md = """
@@ -578,6 +604,50 @@ the **same** even with inline stuff
             html,
             "<div><p>Paragraph one.</p><p>Paragraph two.</p><ul><li>List 1</li><li>List 2</li></ul><ol><li>First</li><li>Second</li></ol></div>"
         )
+
+    """---------------------------"""
+    """extract_title function test"""
+    """---------------------------"""
+
+    def test_extract_title_h1_at_start(self):
+        md = "# My Title\nSome content"
+        result = extract_title(md)
+        self.assertEqual(result, "My Title")
+
+    def test_extract_title_h1_with_leading_spaces(self):
+        md = "   # Leading Title\nContent"
+        result = extract_title(md)
+        self.assertEqual(result, "Leading Title")
+
+    def test_extract_title_h1_with_trailing_spaces(self):
+        md = "# Trailing Title   \nContent"
+        result = extract_title(md)
+        self.assertEqual(result, "Trailing Title")
+
+    def test_extract_title_h1_with_special_characters(self):
+        md = "# Title! @2024 *&^%\nContent"
+        result = extract_title(md)
+        self.assertEqual(result, "Title! @2024 *&^%")
+
+    def test_extract_title_h1_not_first_line(self):
+        md = "Intro text\n# Actual Title\nMore text"
+        result = extract_title(md)
+        self.assertEqual(result, "Actual Title")
+
+    def test_extract_title_multiple_h1(self):
+        md = "# First Title\n# Second Title"
+        result = extract_title(md)
+        self.assertEqual(result, "First Title")
+
+    def test_extract_title_no_h1_raises_exception(self):
+        md = "No heading here\n## Not h1"
+        with self.assertRaises(Exception):
+            extract_title(md)
+
+    def test_extract_title_h1_with_extra_spaces(self):
+        md = "   #    Title With Extra Spaces    \nContent"
+        result = extract_title(md)
+        self.assertEqual(result, "Title With Extra Spaces")
         
 if __name__ == "__main__":
     unittest.main()
