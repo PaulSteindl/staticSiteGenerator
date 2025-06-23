@@ -1,10 +1,18 @@
+from itertools import count
 import unittest
+import blocktype
 from textnode import TextNode, TextType
 from helperfunctions import *
 
 class TestHelperfunctions(unittest.TestCase):
 
+    def setUp(self):
+        blocktype.counter = count(1)
+
+    """------------------------------------"""
     """text_node_to_html_node function test"""
+    """------------------------------------"""
+
     def test_normal_type(self):
         node = TextNode("This is a text node", TextType.NORMAL)
         html_node = text_node_to_html_node(node)
@@ -67,7 +75,10 @@ class TestHelperfunctions(unittest.TestCase):
         with self.assertRaises(AttributeError):
             TextNode("This is a text node", TextType.INVALIDBS, None)
 
+    """-----------------------------------"""
     """split_nodes_delimiter function test"""
+    """-----------------------------------"""
+
     def test_bold_split_nodes_delimiter(self):
         node = TextNode("This is a **amazing bold** text node", TextType.NORMAL)
         new_nodes = split_nodes_delimiter([node], "**", TextType.BOLD)
@@ -157,7 +168,10 @@ class TestHelperfunctions(unittest.TestCase):
         test_node2 = TextNode(" text node", TextType.BOLD, None)
         self.assertListEqual([test_node0, test_node1, test_node2], new_nodes)
 
+    """-------------------------------------"""
     """extract_markdown_images function test"""
+    """-------------------------------------"""
+
     def test_extract_markdown_images(self):
         matches = extract_markdown_images(
             "This is text with an ![image](https://avatars.githubusercontent.com/u/81384142?v=4)"
@@ -178,7 +192,10 @@ class TestHelperfunctions(unittest.TestCase):
         )
         self.assertListEqual([], matches)
 
+    """------------------------------------"""
     """extract_markdown_links function test"""
+    """------------------------------------"""
+
     def test_extract_markdown_links(self):
         matches = extract_markdown_links(
             "This is text with a [link](https://github.com/PaulSteindl)"
@@ -199,7 +216,10 @@ class TestHelperfunctions(unittest.TestCase):
         )
         self.assertListEqual([], matches)
 
+    """-------------------------------"""
     """split_nodes_image function test"""
+    """-------------------------------"""
+
     def test_split_images(self):
         node = TextNode(
             "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png) and another ![second image](https://i.imgur.com/3elNhQu.png)",
@@ -291,7 +311,10 @@ class TestHelperfunctions(unittest.TestCase):
             new_nodes
         )
 
+    """------------------------------"""
     """split_nodes_link function test"""
+    """------------------------------"""
+
     def test_split_links(self):
         node = TextNode(
             "This is text with a [link](https://github.com/PaulSteindl) and another [second link](https://github.com/PaulSteindl/staticSiteGenerator)",
@@ -378,7 +401,10 @@ class TestHelperfunctions(unittest.TestCase):
             new_nodes
         )
 
+    """-------------------------------"""
     """text_to_textnodes function test"""
+    """-------------------------------"""
+
     def test_text_to_textnodes(self):
         new_nodes = text_to_textnodes("This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://github.com/PaulSteindl)")
         self.assertListEqual(
@@ -406,7 +432,10 @@ class TestHelperfunctions(unittest.TestCase):
             new_nodes
         )
 
+    """--------------------------------"""
     """markdown_to_blocks function test"""
+    """--------------------------------"""
+
     def test_markdown_to_blocks(self):
         md = """
 This is **bolded** paragraph
@@ -451,9 +480,104 @@ This is the same paragraph on a new line
                 "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
                 "- This is a list",
                 "- And this is another list"
-            ],
+            ]
         )
 
+    """---------------------"""
+    """markdown_to_html_node"""
+    """---------------------"""
 
+    def test_paragraphs(self):
+        md = """
+This is **bolded** paragraph
+text in a p
+tag here
+
+This is another paragraph with _italic_ text and `code` here"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><p>This is <b>bolded</b> paragraph text in a p tag here</p><p>This is another paragraph with <i>italic</i> text and <code>code</code> here</p></div>",
+        )
+
+    def test_codeblock(self):
+        md = """
+```
+This is text that _should_ remain
+the **same** even with inline stuff
+```
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
+        )
+
+    def test_markdown_to_html_node_heading(self):
+        md = "# Heading 1"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><h1>Heading 1</h1></div>")
+
+    def test_markdown_to_html_node_multiple_headings(self):
+        md = "# Heading 1\n\n## Heading 2\n\n### Heading 3"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><h1>Heading 1</h1><h2>Heading 2</h2><h3>Heading 3</h3></div>")
+
+    def test_markdown_to_html_node_unordered_list(self):
+        md = "- Item 1\n- Item 2\n- Item 3"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><ul><li>Item 1</li><li>Item 2</li><li>Item 3</li></ul></div>")
+
+    def test_markdown_to_html_node_ordered_list(self):
+        md = """1. First
+2. Second
+3. Third"""
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><ol><li>First</li><li>Second</li><li>Third</li></ol></div>")
+
+    def test_markdown_to_html_node_quote(self):
+        md = "> This is a quote"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><blockquote>This is a quote</blockquote></div>")
+
+    def test_markdown_to_html_node_code_block(self):
+        md = "```\ncode block\nwith multiple lines\n```"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div><pre><code>code block\nwith multiple lines\n</code></pre></div>")
+
+    def test_markdown_to_html_node_mixed_blocks(self):
+        md = "# Heading\n\nParagraph text\n\n- List item 1\n- List item 2\n\n> Quote"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><h1>Heading</h1><p>Paragraph text</p><ul><li>List item 1</li><li>List item 2</li></ul><blockquote>Quote</blockquote></div>"
+        )
+
+    def test_markdown_to_html_node_empty(self):
+        md = ""
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(html, "<div></div>")
+
+    def test_markdown_to_html_node_multiple_paragraphs_and_lists(self):
+        md = "Paragraph one.\n\nParagraph two.\n\n- List 1\n- List 2\n\n1. First\n2. Second"
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><p>Paragraph one.</p><p>Paragraph two.</p><ul><li>List 1</li><li>List 2</li></ul><ol><li>First</li><li>Second</li></ol></div>"
+        )
+        
 if __name__ == "__main__":
     unittest.main()

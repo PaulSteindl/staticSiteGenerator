@@ -1,4 +1,7 @@
 import re
+from blocktype import BlockType, block_to_block_type
+from htmlnode import HTMLNode
+from parentnode import ParentNode
 from textnode import TextType, TextNode
 from leafnode import LeafNode
 
@@ -104,3 +107,81 @@ Convert and return List
 """
 def markdown_to_blocks(markdown):
     return list(filter(lambda s: s != "", map(lambda s: s.strip(), markdown.split("\n\n"))))
+
+def get_heading_tag(markdown):
+    for i in range(0, 6):
+        if markdown[i] != "#":
+            return f"h{i}"
+    raise Exception("unexpected # count (>6), invalid heading")
+
+def text_to_children(text):
+    text = text.strip()
+    text = text.replace("\n", " ")
+    text_nodes = text_to_textnodes(text)
+    html_nodes = [text_node_to_html_node(node) for node in text_nodes]
+    return html_nodes
+
+def handle_paragraph(markdown_block):
+    child_nodes = text_to_children(markdown_block)
+    return ParentNode("p", child_nodes)
+
+def handle_heading(markdown_block):
+    tag = get_heading_tag(markdown_block)
+    heading_text = markdown_block.lstrip("#").strip()
+    child_nodes = text_to_children(heading_text)
+    return ParentNode(tag, child_nodes)
+
+def handle_code(markdown_block):
+    code_text = markdown_block.strip("`").strip() + "\n"
+    code_text_node = TextNode(code_text, TextType.CODE)
+    code_html_node = text_node_to_html_node(code_text_node)
+    return ParentNode("pre", [code_html_node])
+
+def handle_quote(markdown_block):
+    quote_text = markdown_block.lstrip(">").strip()
+    child_nodes = text_to_children(quote_text)
+    return ParentNode("blockquote", child_nodes)
+
+def handle_unordered_list(markdown_block):
+    items = [line.lstrip("-").strip() for line in markdown_block.split("\n") if line.strip()]
+    li_nodes = [ParentNode("li", text_to_children(item)) for item in items]
+    return ParentNode("ul", li_nodes)
+
+def handle_ordered_list(markdown_block):
+    items = [re.sub(r"^\d+\.\s*", "", line).strip() for line in markdown_block.split("\n") if line.strip()]
+    li_nodes = [ParentNode("li", text_to_children(item)) for item in items]
+    return ParentNode("ol", li_nodes)
+
+def markdown_to_html_node(markdown):
+    if not markdown:
+        return LeafNode("div", "")
+
+    markdown_blocks = markdown_to_blocks(markdown)
+    children = []
+
+    for markdown_block in markdown_blocks:
+        blocktype = block_to_block_type(markdown_block)
+
+        match(blocktype):
+            case BlockType.PARAGRAPH:
+                children.append(handle_paragraph(markdown_block))
+            
+            case BlockType.HEADING:
+                children.append(handle_heading(markdown_block))
+            
+            case BlockType.CODE:
+                children.append(handle_code(markdown_block))
+
+            case BlockType.QUOTE:
+                children.append(handle_quote(markdown_block))
+
+            case BlockType.UNORDERED_LIST:
+                children.append(handle_unordered_list(markdown_block))
+            
+            case BlockType.ORDERED_LIST:
+                children.append(handle_ordered_list(markdown_block))
+            
+            case _:
+                children.append(handle_paragraph(markdown_block))        
+
+    return ParentNode("div", children)

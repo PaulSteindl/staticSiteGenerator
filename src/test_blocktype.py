@@ -72,20 +72,18 @@ class TestBlockType(unittest.TestCase):
         self.assertEqual(result, BlockType.ORDERED_LIST)
 
     def test_multiple_orded_list_block_to_block_type(self):
-        result_one = block_to_block_type("1. This is an orderd list block")
-        result_two = block_to_block_type("2. This is an orderd list block")
-        result_three = block_to_block_type("3. This is an orderd list block")
-        self.assertEqual(result_one, BlockType.ORDERED_LIST)
-        self.assertEqual(result_two, BlockType.ORDERED_LIST)
-        self.assertEqual(result_three, BlockType.ORDERED_LIST)
+        result = block_to_block_type("""1. This is an orderd list block
+2. This is an orderd list block
+3. This is an orderd list block"""
+        )
+        self.assertEqual(result, BlockType.ORDERED_LIST)
 
     def test_wrong_order_orded_list_block_to_block_type(self):
-        result_one = block_to_block_type("1. This is an orderd list block")
-        result_two = block_to_block_type("3. This is an orderd list block")
-        result_three = block_to_block_type("2. This is an orderd list block")
-        self.assertEqual(result_one, BlockType.ORDERED_LIST)
-        self.assertEqual(result_two, BlockType.PARAGRAPH)
-        self.assertEqual(result_three, BlockType.PARAGRAPH)
+        result = block_to_block_type("""1. This is an orderd list block
+3. This is an orderd list block
+2. This is an orderd list block"""
+        )
+        self.assertEqual(result, BlockType.PARAGRAPH)
 
 if __name__ == "__main__":
     unittest.main()
